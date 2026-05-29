@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOSTROMO SOCIAL SHOT GENERATOR v2.5 - LIVE TYPING EDITION</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=VT323&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body {
+            background-color: #0b0d0c;
+            color: #22ff55;
+            font-family: 'Courier Prime', monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h2.generator-title {
+            color: #22ff55;
+            font-family: 'VT323', monospace;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        /* BARRA STRUMENTI WEYLAND */
+        .toolbar {
+            width: 850px;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 8px;
+            gap: 10px;
+        }
+
+        .screenshot-btn, .execute-btn {
+            background: none;
+            border: 1px solid #22ff55;
+            color: #22ff55;
+            padding: 6px 14px;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .execute-btn {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+
+        .screenshot-btn:hover {
+            background-color: rgba(34, 255, 85, 0.2);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(34, 255, 85, 0.5);
+        }
+
+        .execute-btn:hover {
+            background-color: rgba(255, 170, 0, 0.2);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+        }
+
+        /* --- IL MONITOR CRT DA SCREENSHOT (850x450) --- */
+        .screenshot-area {
+            width: 850px;
+            min-height: 450px;
+            background-color: #020703;
+            position: relative;
+            box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.9), 0 10px 30px rgba(0,0,0,0.7);
+            border: 4px solid #1a1a1a;
+            border-radius: 10px;
+            overflow: hidden;
+            box-sizing: border-box;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        /* EFFETTO FILTRO CRT (LINEE DI SCANSIONE) */
+        .screenshot-area::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            z-index: 10;
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* INTESTAZIONE TERMINALE */
+        .terminal-header {
+            border-bottom: 1px solid rgba(34, 255, 85, 0.5);
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-family: 'VT323', monospace;
+            font-size: 1.4rem;
+            line-height: 1;
+        }
+
+        /* LAYOUT INTERNO A DUE COLONNE */
+        .main-display {
+            display: flex;
+            flex-direction: row;
+            gap: 25px;
+            align-items: stretch;
+            flex-grow: 1;
+        }
+
+        .left-column {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 540px;
+        }
+
+        .right-column {
+            width: 230px;
+            border-left: 1px dashed rgba(34, 255, 85, 0.25);
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+
+        .left-column h1 {
+            font-family: 'VT323', monospace;
+            font-size: 2.5rem;
+            color: #22ff55;
+            margin: 0 0 10px 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(34, 255, 85, 0.4);
+        }
+
+        .system-status {
+            background-color: rgba(34, 255, 85, 0.03);
+            border: 1px dashed rgba(34, 255, 85, 0.4);
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            letter-spacing: 0.5px;
+        }
+
+        .post-text {
+            font-size: 1.2rem;
+            line-height: 1.5;
+            margin: 0;
+            font-family: 'VT323', monospace;
+            color: #22ff55;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-transform: uppercase;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 18px;
+            background-color: #22ff55;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* QUADRO DIAGNOSTICO MATRICE INTERNA MU-TH-UR */
+        .muthur-matrix-box {
+            border: 1px solid rgba(34, 255, 85, 0.3);
+            background: rgba(0, 10, 3, 0.4);
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            line-height: 1.2;
+            flex-shrink: 0;
+        }
+
+        .matrix-row {
+            display: flex;
+            justify-content: space-between;
+            color: rgba(34, 255, 85, 0.6);
+        }
+
+        /* --- MINI M314 MOTION TRACKER --- */
+        .mini-tracker-container {
+            width: 210px;
+            height: 150px;
+            border: 1px solid rgba(34, 255, 85, 0.4);
+            background-color: rgba(2, 7, 3, 0.6);
+            position: relative;
+            overflow: hidden;
+            margin-top: auto;
+            box-sizing: border-box;
+        }
+
+        .radar-grid {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 90px;
+            border: 1.5px solid rgba(34, 255, 85, 0.5);
+            border-bottom: none;
+            border-radius: 90px 90px 0 0;
+        }
+
+        .radar-ring-mid {
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 120px; height: 60px;
+            border: 1px dashed rgba(34, 255, 85, 0.3); border-bottom: none; border-radius: 60px 60px 0 0;
+        }
+        .radar-ring-inner {
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 30px;
+            border: 1px dashed rgba(34, 255, 85, 0.2); border-bottom: none; border-radius: 30px 30px 0 0;
+        }
+        .axis-left { position: absolute; bottom: 0; left: 50%; width: 90px; height: 1px; background: rgba(34, 255, 85, 0.2); transform-origin: left center; transform: rotate(-45deg); }
+        .axis-center { position: absolute; bottom: 0; left: 50%; width: 90px; height: 1px; background: rgba(34, 255, 85, 0.3); transform-origin: left center; transform: rotate(-90deg); }
+        .axis-right { position: absolute; bottom: 0; left: 50%; width: 90px; height: 1px; background: rgba(34, 255, 85, 0.2); transform-origin: left center; transform: rotate(-135deg); }
+
+        .tracker-telemetry {
+            position: absolute; font-family: 'VT323', monospace; font-size: 0.85rem; color: rgba(34, 255, 85, 0.7); top: 5px; left: 8px; line-height: 1.1;
+        }
+        .mini-distance-display {
+            position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); color: #22ff55; font-family: 'VT323', monospace; font-size: 1.1rem; font-weight: bold; text-shadow: 0 0 5px rgba(34, 255, 85, 0.8);
+        }
+
+        .blip {
+            position: absolute; width: 8px; height: 8px; background-color: #22ff55; border-radius: 50%; box-sizing: border-box; box-shadow: 0 0 10px #22ff55, 0 0 20px #22ff55;
+            animation: mini-ping 1s infinite ease-in-out; z-index: 4; opacity: 0; transition: left 0.1s linear, bottom 0.1s linear, opacity 0.4s ease-in-out;
+        }
+
+        @keyframes mini-ping {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.4); box-shadow: 0 0 15px #22ff55; }
+            100% { transform: scale(0.8); }
+        }
+
+        .terminal-footer {
+            margin-top: auto; display: flex; justify-content: space-between; font-size: 0.7rem; color: rgba(34, 255, 85, 0.4); text-transform: uppercase; padding-top: 10px; border-top: 1px solid rgba(34, 255, 85, 0.15); flex-shrink: 0;
+        }
+
+        /* --- PANNELLO DI CONTROLLO OPERATORE --- */
+        .control-panel {
+            width: 850px; margin-top: 25px; background-color: #121614; border: 1px dashed #22ff55; padding: 20px; border-radius: 6px; box-sizing: border-box;
+        }
+        .control-panel h3 { margin-top: 0; color: #fff; font-family: 'VT323', monospace; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 1px; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; color: #22ff55; margin-bottom: 5px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+        .control-input { width: 100%; background-color: #020703; border: 1px solid rgba(34, 255, 85, 0.5); color: #FFF; padding: 10px; font-family: 'Courier Prime', monospace; font-size: 1rem; border-radius: 3px; box-sizing: border-box; outline: none; }
+        .control-input:focus { border-color: #22ff55; box-shadow: 0 0 8px rgba(34, 255, 85, 0.3); }
+        .glow { text-shadow: 0 0 5px rgba(34, 255, 85, 0.5); }
+    </style>
+</head>
+<body>
+
+<h2 class="generator-title">MU-TH-UR Subspace Log Generator</h2>
+
+<div class="toolbar">
+    <button class="execute-btn" onclick="startLiveTyping()">
+        [ EXECUTE_SEQUENCE ]
+    </button>
+    <button class="screenshot-btn" onclick="takeSnapshot()">
+        [ COM_NET_CAPTURE ]
+    </button>
+</div>
+
+<div class="screenshot-area" id="nostromoBox">
+    <div class="terminal-header">
+        <div>SYS_REF: CORE_DUMP_STREAM // BLUESKY_NODE // LINK_STABLE</div>
+        <div class="logo">MDS-OPERATING_SYS</div>
+    </div>
+
+    <div class="main-display">
+        <div class="left-column">
+            <h1 id="live-title" class="glow">RAPPORTO TECNICO</h1>
+            
+            <div class="system-status glow">
+                <span id="live-stardate">2105.26</span>
+            </div>
+            
+            <p class="post-text glow" id="live-content"><span class="cursor"></span></p>
+        </div>
+
+        <div class="right-column">
+            <div class="muthur-matrix-box">
+                <div style="color: #22ff55; font-size: 0.65rem; margin-bottom: 4px; font-weight: bold;">MEM_DUMP_GRID</div>
+                <div class="matrix-row"><span>01011</span><span>[OK]</span></div>
+                <div class="matrix-row"><span>11001</span><span>[SYS]</span></div>
+                <div class="matrix-row"><span>00110</span><span>[RUN]</span></div>
+                <div class="matrix-row" style="color: #22ff55;"><span>11100</span><span>[CLR]</span></div>
+            </div>
+            
+            <div class="mini-tracker-container">
+                <div class="tracker-telemetry">
+                    M314-TRACKER<br>
+                    SRCH_RANGE: 30m
+                </div>
+                <div class="radar-grid">
+                    <div class="radar-ring-mid"></div>
+                    <div class="radar-ring-inner"></div>
+                    <div class="axis-left"></div>
+                    <div class="axis-center"></div>
+                    <div class="axis-right"></div>
+                </div>
+                <div class="blip" id="alienBlip"></div>
+                <div class="mini-distance-display">
+                    <span id="meters">0.0</span> m
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="terminal-footer">
+        <span>[AWAITING OPERATOR INPUT...]</span>
+        <span>STATUS: COURIER_STREAM_ACTIVE</span>
+    </div>
+</div>
+
+<div class="control-panel">
+    <h3>Pannello Inserimento Dati</h3>
+    <div class="input-group"><label>Intestazione Log:</label><input type="text" id="inTitle" class="control-input" value="RAPPORTO TECNICO" oninput="updateMetadataOnly()"></div>
+    <div style="display:flex; gap:10px;">
+        <div class="input-group" style="flex:1"><label>LOCALITÀ:</label><input type="text" id="inLoc" class="control-input" value="L-SOL-3" oninput="updateMetadataOnly()"></div>
+        <div class="input-group" style="flex:1"><label>N° LOG (N):</label><input type="text" id="inNum" class="control-input" value="1" oninput="updateMetadataOnly()"></div>
+    </div>
+    <div class="input-group"><label>Testo da iniettare:</label><textarea id="inText" class="control-input" rows="3">Inizializzazione protocollo Nostromo. Rilevato movimento sconosciuto nel condotto di ventilazione primario...</textarea></div>
+</div>
+
+<script>
+    let typingInterval = null;
+
+    // Aggiorna titolo e stardate in tempo reale senza toccare il testo principale
+    function updateMetadataOnly() {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), 0, 0);
+        const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24)).toString().padStart(3, '0');
+        const yearShort = now.getFullYear().toString().slice(-2);
+        
+        const totalMinutes = now.getHours() * 60 + now.getMinutes();
+        const roundedMinutes = Math.round(totalMinutes / 5) * 5;
+        const hh = Math.floor(roundedMinutes / 60) % 24;
+        const mm = roundedMinutes % 60;
+        const hhmm = hh.toString().padStart(2, '0') + mm.toString().padStart(2, '0');
+        
+        const loc = document.getElementById('inLoc').value;
+        const num = document.getElementById('inNum').value;
+        const title = document.getElementById('inTitle').value;
+        
+        document.getElementById('live-stardate').innerText = `21.${yearShort}${dayOfYear} | ${loc} | ${dayOfYear}.${hhmm}.${num}`;
+        document.getElementById('live-title').innerText = title.toUpperCase();
+    }
+    
+    // Funzione "Typewriter" ad attivazione manuale
+    function startLiveTyping() {
+        // Se c'è già una digitazione in corso, la ferma per ricominciare
+        if (typingInterval) clearInterval(typingInterval);
+        
+        const fullText = document.getElementById('inText').value;
+        const contentDisplay = document.getElementById('live-content');
+        let index = 0;
+        
+        // Svuota il campo di testo mantenendo solo il cursore prima di iniziare
+        contentDisplay.innerHTML = '<span class="cursor"></span>';
+        
+        // Velocità di scrittura: 50ms per carattere (un vero flusso mainframe di fantascienza)
+        typingInterval = setInterval(() => {
+            if (index < fullText.length) {
+                const currentSubstring = fullText.substring(0, index + 1);
+                // Gestisce i ritorni a capo per l'HTML
+                const formattedText = currentSubstring.replace(/\n/g, '<br>');
+                
+                contentDisplay.innerHTML = formattedText + '<span class="cursor"></span>';
+                index++;
+            } else {
+                clearInterval(typingInterval);
+            }
+        }, 50);
+    }
+
+    function takeSnapshot() {
+        const target = document.getElementById('nostromoBox');
+        html2canvas(target, {
+            logging: false,
+            backgroundColor: '#020703',
+            useCORS: true,
+            scale: 2 
+        }).then(canvas => {
+            const image = canvas.toDataURL("image/png");
+            const link = document.createElement('a');
+            link.download = 'nostromo_subspace_log.png';
+            link.href = image;
+            link.click();
+        });
+    }
+
+    // --- TRACKER LOGIC ---
+    const blip = document.getElementById('alienBlip');
+    const metersDisplay = document.getElementById('meters');
+    const centerX = 105;
+    const centerY = 25; 
+    let currentX, currentY, startX, startY;
+    let step = 0;
+    const totalSteps = 80;
+    let isResetting = false;
+
+    function spawnAlien() {
+        isResetting = true;
+        blip.style.opacity = 0;
+        setTimeout(() => {
+            step = 0;
+            blip.style.transition = 'none';
+            const angleDeg = Math.floor(Math.random() * (150 - 30 + 1)) + 30;
+            const angleRad = angleDeg * (Math.PI / 180);
+            const radius = 85;
+            startX = centerX + radius * Math.cos(angleRad);
+            startY = centerY + radius * Math.sin(angleRad);
+            currentX = startX;
+            currentY = startY;
+            updateBlipPosition();
+            void blip.offsetWidth; 
+            blip.style.transition = 'left 0.1s linear, bottom 0.1s linear, opacity 0.5s ease-in-out';
+            blip.style.opacity = 1;
+            isResetting = false;
+        }, 400);
+    }
+
+    function updateBlipPosition() {
+        blip.style.left = currentX + 'px';
+        blip.style.bottom = currentY + 'px';
+        const dx = currentX - centerX;
+        const dy = currentY - centerY;
+        const pixelDistance = Math.sqrt(dx * dx + dy * dy);
+        const meters = (pixelDistance / 85) * 30;
+        metersDisplay.innerText = meters.toFixed(1);
+    }
+
+    setInterval(() => {
+        if (isResetting) return;
+        if (step > totalSteps) { spawnAlien(); return; }
+        const t = step / totalSteps;
+        currentX = startX + (centerX - startX) * t;
+        currentY = startY + (centerY - startY) * t;
+        updateBlipPosition();
+        if (step < totalSteps - 5) { blip.style.opacity = 1 - (t * 0.5); }
+        step++;
+    }, 100);
+
+    // Inizializzazione dati stardate all'avvio
+    updateMetadataOnly();
+    spawnAlien();
+</script>
+</body>
+</html>
